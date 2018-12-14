@@ -1,0 +1,519 @@
+{-# START_FILE .gitignore #-}
+dist*
+static/tmp/
+static/combined/
+*.hi
+*.o
+.hsenv*
+cabal-dev/
+.stack-work/
+.stack-work-devel/
+.cabal-sandbox
+cabal.sandbox.config
+*.swp
+*~
+\#*
+{{name}}.cabal
+
+{-# START_FILE README.md #-}
+
+{{name}}
+
+## Haskell Setup
+
+1. If you haven't already, [install Stack](https://haskell-lang.org/get-started)
+	* On POSIX systems, this is usually `curl -sSL https://get.haskellstack.org/ | sh`
+2. Build project: `stack build`
+
+{-# START_FILE Setup.hs #-}
+import Distribution.Simple
+main = defaultMain
+
+{-# START_FILE stack.yaml #-}
+resolver: lts-12.22
+
+{-# START_FILE package.yaml #-}
+name: {{name}}
+version: "0.1.0.0"
+category: "{{category}}{{^category}}category{{/category}}"
+author: "{{author-name}}{{^author-name}}author-name{{/author-name}}"
+maintainer: {{author-email}}{{^author-email}}author-email{{/author-email}}
+copyright: "{{copyright}}{{^copyright}}copyright{{/copyright}}"
+github: "{{github-username}}{{^github-username}}githubuser{{/github-username}}/{{name}}"
+extra-source-files:
+- README.md
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wredundant-constraints
+- -Wimplicit-prelude
+- -Wtabs
+- -Wmissing-local-signatures
+- -fhelpful-errors
+
+default-extensions:
+- ApplicativeDo
+- BangPatterns
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DeriveLift
+- DeriveTraversable
+- DerivingStrategies
+- EmptyCase
+- ExistentialQuantification
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- GeneralizedNewtypeDeriving
+- InstanceSigs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+- NoImplicitPrelude
+- OverloadedLabels
+- OverloadedStrings
+- PatternSynonyms
+- RankNTypes
+- ScopedTypeVariables
+- StandaloneDeriving
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- TypeFamilyDependencies
+- TypeOperators
+
+dependencies:
+- base
+- protolude
+
+_common-deps: &common-deps
+  - exceptions
+  - protolude
+  - text
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Main
+  dependencies: *common-deps
+
+internal-libraries:
+  {{name}}-internal:
+    source-dirs: src
+    exposed-modules:
+    - Preamble
+    dependencies: *common-deps
+
+executables:
+  {{name}}:
+    main: App
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - {{name}}
+
+tests:
+  spec:
+    main: Main
+    source-dirs:
+    - test
+    dependencies:
+    - {{name}}-internal
+    - hedgehog
+    ghc-options:
+    - -threaded
+
+{-# START_FILE .stylish-haskell.yaml #-}
+# stylish-haskell configuration file
+# ==================================
+
+# The stylish-haskell tool is mainly configured by specifying steps. These steps
+# are a list, so they have an order, and one specific step may appear more than
+# once (if needed). Each file is processed by these steps in the given order.
+steps:
+  # Convert some ASCII sequences to their Unicode equivalents. This is disabled
+  # by default.
+  # - unicode_syntax:
+  #     # In order to make this work, we also need to insert the UnicodeSyntax
+  #     # language pragma. If this flag is set to true, we insert it when it's
+  #     # not already present. You may want to disable it if you configure
+  #     # language extensions using some other method than pragmas. Default:
+  #     # true.
+  #     add_language_pragma: true
+
+  # Align the right hand side of some elements.  This is quite conservative
+  # and only applies to statements where each element occupies a single
+  # line.
+  - simple_align:
+      cases: true
+      top_level_patterns: true
+      records: true
+
+  # Import cleanup
+  - imports:
+      # There are different ways we can align names and lists.
+      #
+      # - global: Align the import names and import list throughout the entire
+      #   file.
+      #
+      # - file: Like global, but don't add padding when there are no qualified
+      #   imports in the file.
+      #
+      # - group: Only align the imports per group (a group is formed by adjacent
+      #   import lines).
+      #
+      # - none: Do not perform any alignment.
+      #
+      # Default: global.
+      align: none
+
+      # The following options affect only import list alignment.
+      #
+      # List align has following options:
+      #
+      # - after_alias: Import list is aligned with end of import including
+      #   'as' and 'hiding' keywords.
+      #
+      #   > import qualified Data.List      as List (concat, foldl, foldr, head,
+      #   >                                          init, last, length)
+      #
+      # - with_alias: Import list is aligned with start of alias or hiding.
+      #
+      #   > import qualified Data.List      as List (concat, foldl, foldr, head,
+      #   >                                 init, last, length)
+      #
+      # - new_line: Import list starts always on new line.
+      #
+      #   > import qualified Data.List      as List
+      #   >     (concat, foldl, foldr, head, init, last, length)
+      #
+      # Default: after_alias
+      list_align: after_alias
+
+      # Right-pad the module names to align imports in a group:
+      #
+      # - true: a little more readable
+      #
+      #   > import qualified Data.List       as List (concat, foldl, foldr,
+      #   >                                           init, last, length)
+      #   > import qualified Data.List.Extra as List (concat, foldl, foldr,
+      #   >                                           init, last, length)
+      #
+      # - false: diff-safe
+      #
+      #   > import qualified Data.List as List (concat, foldl, foldr, init,
+      #   >                                     last, length)
+      #   > import qualified Data.List.Extra as List (concat, foldl, foldr,
+      #   >                                           init, last, length)
+      #
+      # Default: true
+      pad_module_names: true
+
+      # Long list align style takes effect when import is too long. This is
+      # determined by 'columns' setting.
+      #
+      # - inline: This option will put as much specs on same line as possible.
+      #
+      # - new_line: Import list will start on new line.
+      #
+      # - new_line_multiline: Import list will start on new line when it's
+      #   short enough to fit to single line. Otherwise it'll be multiline.
+      #
+      # - multiline: One line per import list entry.
+      #   Type with constructor list acts like single import.
+      #
+      #   > import qualified Data.Map as M
+      #   >     ( empty
+      #   >     , singleton
+      #   >     , ...
+      #   >     , delete
+      #   >     )
+      #
+      # Default: inline
+      long_list_align: inline
+
+      # Align empty list (importing instances)
+      #
+      # Empty list align has following options
+      #
+      # - inherit: inherit list_align setting
+      #
+      # - right_after: () is right after the module name:
+      #
+      #   > import Vector.Instances ()
+      #
+      # Default: inherit
+      empty_list_align: inherit
+
+      # List padding determines indentation of import list on lines after import.
+      # This option affects 'long_list_align'.
+      #
+      # - <integer>: constant value
+      #
+      # - module_name: align under start of module name.
+      #   Useful for 'file' and 'group' align settings.
+      list_padding: 4
+
+      # Separate lists option affects formatting of import list for type
+      # or class. The only difference is single space between type and list
+      # of constructors, selectors and class functions.
+      #
+      # - true: There is single space between Foldable type and list of it's
+      #   functions.
+      #
+      #   > import Data.Foldable (Foldable (fold, foldl, foldMap))
+      #
+      # - false: There is no space between Foldable type and list of it's
+      #   functions.
+      #
+      #   > import Data.Foldable (Foldable(fold, foldl, foldMap))
+      #
+      # Default: true
+      separate_lists: true
+
+      # Space surround option affects formatting of import lists on a single
+      # line. The only difference is single space after the initial
+      # parenthesis and a single space before the terminal parenthesis.
+      #
+      # - true: There is single space associated with the enclosing
+      #   parenthesis.
+      #
+      #   > import Data.Foo ( foo )
+      #
+      # - false: There is no space associated with the enclosing parenthesis
+      #
+      #   > import Data.Foo (foo)
+      #
+      # Default: false
+      space_surround: false
+
+  # Language pragmas
+  - language_pragmas:
+      # We can generate different styles of language pragma lists.
+      #
+      # - vertical: Vertical-spaced language pragmas, one per line.
+      #
+      # - compact: A more compact style.
+      #
+      # - compact_line: Similar to compact, but wrap each line with
+      #   `{-#LANGUAGE #-}'.
+      #
+      # Default: vertical.
+      style: vertical
+
+      # Align affects alignment of closing pragma brackets.
+      #
+      # - true: Brackets are aligned in same column.
+      #
+      # - false: Brackets are not aligned together. There is only one space
+      #   between actual import and closing bracket.
+      #
+      # Default: true
+      align: true
+
+      # stylish-haskell can detect redundancy of some language pragmas. If this
+      # is set to true, it will remove those redundant pragmas. Default: true.
+      remove_redundant: true
+
+  # Replace tabs by spaces. This is disabled by default.
+  # - tabs:
+  #     # Number of spaces to use for each tab. Default: 8, as specified by the
+  #     # Haskell report.
+  #     spaces: 8
+
+  # Remove trailing whitespace
+  - trailing_whitespace: {}
+
+  # Squash multiple spaces between the left and right hand sides of some
+  # elements into single spaces. Basically, this undoes the effect of
+  # simple_align but is a bit less conservative.
+  # - squash: {}
+
+# A common setting is the number of columns (parts of) code will be wrapped
+# to. Different steps take this into account. Default: 80.
+columns: 80
+
+# By default, line endings are converted according to the OS. You can override
+# preferred format here.
+#
+# - native: Native newline format. CRLF on Windows, LF on other OSes.
+#
+# - lf: Convert to LF ("\n").
+#
+# - crlf: Convert to CRLF ("\r\n").
+#
+# Default: native.
+newline: native
+
+# Sometimes, language extensions are specified in a cabal file or from the
+# command line instead of using language pragmas in the file. stylish-haskell
+# needs to be aware of these, so it can parse the file correctly.
+#
+# No language extensions are enabled by default.
+language_extensions:
+- ApplicativeDo
+- BangPatterns
+- ConstraintKinds
+- DataKinds
+- DefaultSignatures
+- DeriveFoldable
+- DeriveFunctor
+- DeriveGeneric
+- DeriveLift
+- DeriveTraversable
+- DerivingStrategies
+- DisambiguateRecordFields
+- DuplicateRecordFields
+- EmptyCase
+- ExistentialQuantification
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- GeneralizedNewtypeDeriving
+- InstanceSigs
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+- NoImplicitPrelude
+- OverloadedLabels
+- OverloadedStrings
+- PatternSynonyms
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- StandaloneDeriving
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- TypeFamilyDependencies
+- TypeOperators
+- ViewPatterns
+
+
+{-# START_FILE .editorconfig #-}
+# EditorConfig is awesome: https://EditorConfig.org
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+# Matches multiple files with brace expansion notation
+# Set default charset
+[*.{hs}]
+charset = utf-8
+
+# 2 space indentation
+[*.hs]
+indent_style = space
+indent_size = 2
+
+
+{-# START_FILE app/App.hs #-}
+module App where
+
+import Protolude (IO)
+import System.IO (hSetEncoding, stderr, stdout, utf8)
+
+import qualified Main
+
+
+main :: IO ()
+main = do
+  hSetEncoding stdout utf8
+  hSetEncoding stderr utf8
+
+  Main.run
+
+
+{-# START_FILE src/Main.hs #-}
+module Main (run) where
+
+import Preamble
+
+run :: IO ()
+run = putText "It works!"
+
+{-# START_FILE src/Preamble.hs #-}
+module Preamble
+  ( module Protolude
+  , (.!)
+  , (.!!)
+  , (.!!!)
+  , (.!!!!)
+  ) where
+
+
+import Protolude
+
+(.!) :: (b -> c) -> (a -> b) -> a -> c
+(.!) = (.)
+infixl 8 .!
+
+(.!!) :: (c -> d) -> (a -> b -> c) -> a -> b -> d
+(.!!) = (.) . (.)
+infixl 8 .!!
+
+(.!!!) :: (d -> e) -> (a -> b -> c -> d) -> a -> b -> c -> e
+(.!!!) = (.) . (.) . (.)
+infixl 8 .!!!
+
+(.!!!!) :: (e -> f) -> (a -> b -> c -> d -> e) -> a -> b -> c -> d -> f
+(.!!!!) = (.) . (.) . (.) . (.)
+infixl 8 .!!!!
+
+
+{-# START_FILE test/Main.hs #-}
+module Main where
+
+import Protolude
+
+import System.Exit (exitFailure)
+import System.IO (hSetEncoding, stderr, stdout, utf8)
+
+import qualified ExampleSpec (run)
+
+
+main :: IO ()
+main = do
+  hSetEncoding stdout utf8
+  hSetEncoding stderr utf8
+  unlessM (and <$> sequence specs) exitFailure where
+    specs = [ ExampleSpec.run ]
+
+{-# START_FILE test/ExampleSpec.hs #-}
+module ExampleSpec (run) where
+
+import Hedgehog
+import Preamble
+
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
+
+run :: IO Bool
+run = checkParallel $ Group "ExampleSpec"
+  [ exampleProperty
+  ]
+
+exampleProperty :: (PropertyName, Property)
+exampleProperty = ("Example property",) $ property $ do
+  i <- forAll $ Gen.int $ Range.singleton 42
+  i === 42
+
