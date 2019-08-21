@@ -30,7 +30,7 @@ import Distribution.Simple
 main = defaultMain
 
 {-# START_FILE stack.yaml #-}
-resolver: lts-14.00
+resolver: lts-14.1
 
 {-# START_FILE package.yaml #-}
 name: {{name}}
